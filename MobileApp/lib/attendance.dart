@@ -22,7 +22,7 @@ class _AttendancePage extends State<AttendancePage> {
   final BleManager bleManager = BleManager();
   final FlutterBlePeripheral blePeripheral = FlutterBlePeripheral();
   String accessToken;
-  Set<MapEntry<String, String>> students = HashSet();
+  Map<String, String> students = Map();
 
   @override
   initState() {
@@ -40,14 +40,15 @@ class _AttendancePage extends State<AttendancePage> {
           print('attend/$student');
           await http
               .get(
-                'https://4ced13cf1d57.ngrok.io/api/attend?jwt=$accessToken&student=$student&lesson=pupa',
+                'http://10.91.55.167:8000/api/attend?jwt=$accessToken&student=$student&lesson=pupa',
                 headers: {'Authorization': 'Bearer $accessToken'},
               )
               .then((res) => jsonDecode(res.body))
               .then((student) {
                 if (student['name'] != null)
-                  students
-                      .add(MapEntry(student['name'], student['email'] ?? ''));
+                  setState(() {
+                    students[student['email']] = student['name'];
+                  });
               });
         }
       });
@@ -74,7 +75,8 @@ class _AttendancePage extends State<AttendancePage> {
 
     if (await blePeripheral.isAdvertising()) await blePeripheral.stop();
 
-    await http.get('https://4ced13cf1d57.ngrok.io/api/authorize?jwt=${token.idToken}');
+    await http
+        .get('http://10.91.55.167:8000/api/authorize?jwt=${token.idToken}');
 
     AdvertiseData data = AdvertiseData();
 
@@ -101,17 +103,45 @@ class _AttendancePage extends State<AttendancePage> {
 
   @override
   Widget build(BuildContext context) {
+    // return Scaffold(
+    //   appBar: AppBar(
+    //     title: Text('Attendance'),
+    //   ),
+    //   body: ListView(
+    //     children: students.entries
+    //         .map((p) => ListTile(
+    //               title: Text(p.value),
+    //               subtitle: Text(p.key),
+    //             ))
+    //         .toList(),
+    //   ),
+    // );
+
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Attendance'),
-        ),
-        body: ListView(
-          children: students
-              .map((p) => ListTile(
-                    title: Text(p.value),
-                    subtitle: Text(p.key),
-                  ))
-              .toList(),
-        ));
+      appBar: AppBar(
+        title: Text('Innopolis University : FSE'),
+      ),
+      body: _buildAttendanceList(),
+    );
+  }
+
+  Widget _buildAttendanceList() {
+    return ListView(
+      padding: EdgeInsets.all(16.0),
+      children: ListTile.divideTiles(
+        context: context,
+        tiles: students.entries
+            .map((student) => ListTile(
+                title: Text(
+                  student.value,
+                  style: TextStyle(fontSize: 20),
+                ),
+                subtitle: Text(student.key),
+                trailing: Icon(
+                  Icons.check_circle,
+                  color: true ? Colors.green : Colors.red,
+                ))),
+      ).toList(),
+    );
   }
 }
