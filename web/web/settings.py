@@ -39,9 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'allauth',
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.microsoft',
+    'api'
 ]
 
 MIDDLEWARE = [
@@ -78,7 +80,7 @@ WSGI_APPLICATION = 'web.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': config("DATABASES_URL", default="sqlite:///db.sqlite3", cast=dj_database_url.parse)
+    'default': config("DATABASE_URL", default="sqlite:///db.sqlite3", cast=dj_database_url.parse)
 }
 
 # Password validation
@@ -129,15 +131,27 @@ AUTHENTICATION_BACKENDS = [
     'allauth.account.auth_backends.AuthenticationBackend'
 ]
 
+MICROSOFT_CLIENT_ID = config("MICROSOFT_CLIENT_ID")
+MICROSOFT_CLIENT_SECRET = config("MICROSOFT_CLIENT_SECRET")
+
 SOCIALACCOUNT_PROVIDERS = {
     'microsoft': {
         'tenant': 'organizations',
         'SCOPE': [
+            'openid',
             'email',
+            'profile',
+            'User.Read'
         ],
         'APP': {
-            'client_id': config("MICROSOFT_CLIENT_ID"),
-            'secret': config("MICROSOFT_CLIENT_SECRET")
+            'client_id': MICROSOFT_CLIENT_ID,
+            'secret': MICROSOFT_CLIENT_SECRET
         }
     }
 }
+
+SITE_ID = 1
+LOGIN_REDIRECT_URL = '/'
+
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
