@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hasura_connect/hasura_connect.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_appauth/flutter_appauth.dart';
+import 'hasura.dart';
 
 class OauthModel extends ChangeNotifier {
   OauthModel() : super() {
@@ -66,6 +68,16 @@ class OauthModel extends ChangeNotifier {
       _token = null;
       await _secureStorage.delete(key: 'refresh_token');
     } else {
+      hasura = HasuraConnect(hasuraUrl, headers: {
+        'Authorization': token.idToken,
+      });
+      await hasura.mutation("""
+        mutation {
+          ensureUser{
+            success
+          }
+        }
+      """);
       _token = token;
       await _secureStorage.write(
           key: 'refresh_token', value: token.refreshToken);
@@ -93,6 +105,16 @@ class OauthModel extends ChangeNotifier {
       _token = null;
       await _secureStorage.delete(key: 'refresh_token');
     } else {
+      hasura = HasuraConnect(hasuraUrl, headers: {
+        'Authorization': token.idToken,
+      });
+      await hasura.mutation("""
+        mutation {
+          ensureUser{
+            success
+          }
+        }
+      """);
       _token = token;
       await _secureStorage.write(
           key: 'refresh_token', value: token.refreshToken);

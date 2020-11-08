@@ -6,9 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ble_lib/flutter_ble_lib.dart';
 import 'package:flutter_ble_peripheral/data.dart';
 import 'package:flutter_ble_peripheral/main.dart';
+import 'package:hasura_connect/hasura_connect.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+
+import 'hasura.dart';
 
 class AttendancePage extends StatefulWidget {
   AttendancePage({Key key}) : super(key: key);
@@ -24,6 +27,9 @@ class _AttendancePage extends State<AttendancePage> {
   String accessToken;
   Map<String, String> students = Map();
 
+  Snapshot<dynamic> myAttendanceSnapshot;
+  Snapshot<dynamic> myAttendeesSnapshot;
+
   @override
   initState() {
     super.initState();
@@ -38,25 +44,52 @@ class _AttendancePage extends State<AttendancePage> {
             peripheral.advertisementData?.serviceUuids?.length == 1) {
           final student = peripheral.advertisementData.serviceUuids[0];
           print('attend/$student');
-          await http
-              .get(
-                'http://10.91.55.167:8000/api/attend?jwt=$accessToken&student=$student&lesson=pupa',
-                headers: {'Authorization': 'Bearer $accessToken'},
-              )
-              .then((res) => jsonDecode(res.body))
-              .then((student) {
-                if (student['name'] != null)
-                  setState(() {
-                    students[student['email']] = student['name'];
-                  });
-              });
         }
+      });
+    });
+
+    hasura.subscription("""
+      subscription(\$me: uuid!) {
+        attendances(where: {user_id: {_eq: \$me}}) {
+          class {
+            title
+            teacher: user {
+              name
+              email
+            }
+          }
+        }
+      }
+    """, variables: {
+      "me": "10fb17c8-a2e7-40ba-bb13-13e0f92e4e74",
+    }).then((value) {
+      setState(() {
+        myAttendanceSnapshot = value;
+      });
+    });
+
+    hasura.subscription("""
+      subscription {
+        attendances(where: {class_id: {_eq: "3cfd889b-8713-4713-a8ae-c4e909233d95"}}) {
+          user {
+            name
+            email
+            id
+          }
+        }
+      }
+    """).then((value) {
+      setState(() {
+        myAttendeesSnapshot = value;
       });
     });
   }
 
   @override
   Future<void> dispose() async {
+    myAttendanceSnapshot?.close();
+    myAttendeesSnapshot?.close();
+
     await blePeripheral.stop();
 
     await bleManager.stopPeripheralScan();
@@ -73,10 +106,9 @@ class _AttendancePage extends State<AttendancePage> {
     this.accessToken = token.idToken;
     final user = Provider.of<OauthModel>(context).user;
 
-    if (await blePeripheral.isAdvertising()) await blePeripheral.stop();
+    // myAttendanceSnapshot?.changeVariables({"me": user["id"]});
 
-    await http
-        .get('http://10.91.55.167:8000/api/authorize?jwt=${token.idToken}');
+    if (await blePeripheral.isAdvertising()) await blePeripheral.stop();
 
     AdvertiseData data = AdvertiseData();
 
@@ -103,45 +135,79 @@ class _AttendancePage extends State<AttendancePage> {
 
   @override
   Widget build(BuildContext context) {
-    // return Scaffold(
-    //   appBar: AppBar(
-    //     title: Text('Attendance'),
-    //   ),
-    //   body: ListView(
-    //     children: students.entries
-    //         .map((p) => ListTile(
-    //               title: Text(p.value),
-    //               subtitle: Text(p.key),
-    //             ))
-    //         .toList(),
-    //   ),
-    // );
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Innopolis University : FSE'),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(Provider.of<OauthModel>(context).user["name"]),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: "My Attendances"),
+              Tab(text: "My Attendees"),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [_buildAttendanceList(), _buildAttendeesList()],
+        ),
       ),
-      body: _buildAttendanceList(),
     );
   }
 
   Widget _buildAttendanceList() {
-    return ListView(
-      padding: EdgeInsets.all(16.0),
-      children: ListTile.divideTiles(
-        context: context,
-        tiles: students.entries
-            .map((student) => ListTile(
+    return StreamBuilder(
+      stream: myAttendanceSnapshot?.rootStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.active)
+          return Container();
+        print(snapshot);
+        var attendances = snapshot.data["data"]["attendances"] as List<dynamic>;
+        return ListView(
+          padding: EdgeInsets.all(16.0),
+          children: ListTile.divideTiles(
+            context: context,
+            tiles: attendances.map((student) => ListTile(
                 title: Text(
-                  student.value,
+                  student["class"]["title"],
                   style: TextStyle(fontSize: 20),
                 ),
-                subtitle: Text(student.key),
+                subtitle: Text(student["class"]["teacher"]["name"]),
                 trailing: Icon(
                   Icons.check_circle,
                   color: true ? Colors.green : Colors.red,
                 ))),
-      ).toList(),
+          ).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildAttendeesList() {
+    return StreamBuilder(
+      stream: myAttendeesSnapshot?.rootStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.active)
+          return Container();
+        var attendances = snapshot.data["data"]["attendances"] as List<dynamic>;
+        return ListView(
+          padding: EdgeInsets.all(16.0),
+          children: ListTile.divideTiles(
+            context: context,
+            tiles: attendances?.map((student) => ListTile(
+                title: Text(
+                  student["user"]["name"].contains("Sherif")
+                      ? "[zoom] " + student["user"]["name"]
+                      : student["user"]["name"],
+                  style: TextStyle(fontSize: 20),
+                ),
+                subtitle: Text(student["user"]["email"]),
+                trailing: Icon(
+                  Icons.check_circle,
+                  color: true ? Colors.green : Colors.red,
+                ))),
+          ).toList(),
+        );
+      },
     );
   }
 }
