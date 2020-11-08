@@ -1,0 +1,123 @@
+{
+  "version": 2,
+  "tables": [
+    {
+      "table": {
+        "schema": "public",
+        "name": "attendances"
+      },
+      "select_permissions": [
+        {
+          "role": "anonymous",
+          "permission": {
+            "columns": [
+              "class_id",
+              "user_id",
+              "hits",
+              "first_seen_at",
+              "last_seen_at"
+            ],
+            "filter": {}
+          }
+        }
+      ]
+    },
+    {
+      "table": {
+        "schema": "public",
+        "name": "classes"
+      },
+      "select_permissions": [
+        {
+          "role": "anonymous",
+          "permission": {
+            "columns": [
+              "id",
+              "teacher_id",
+              "title",
+              "starts_at",
+              "ends_at"
+            ],
+            "filter": {}
+          }
+        }
+      ]
+    },
+    {
+      "table": {
+        "schema": "public",
+        "name": "users"
+      },
+      "select_permissions": [
+        {
+          "role": "anonymous",
+          "permission": {
+            "columns": [
+              "id",
+              "name",
+              "email",
+              "token",
+              "expires_at"
+            ],
+            "filter": {}
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "name": "attend",
+      "definition": {
+        "handler": "http://api:80/attend",
+        "output_type": "SuccessOutput",
+        "forward_client_headers": true,
+        "arguments": [
+          {
+            "name": "user_id",
+            "type": "uuid!"
+          },
+          {
+            "name": "class_id",
+            "type": "uuid!"
+          }
+        ],
+        "type": "mutation",
+        "kind": "synchronous"
+      },
+      "permissions": [
+        {
+          "role": "anonymous"
+        }
+      ]
+    },
+    {
+      "name": "ensureUser",
+      "definition": {
+        "handler": "http://api:80/ensureUser",
+        "output_type": "SuccessOutput",
+        "forward_client_headers": true,
+        "type": "mutation",
+        "kind": "synchronous"
+      },
+      "permissions": [
+        {
+          "role": "anonymous"
+        }
+      ]
+    }
+  ],
+  "custom_types": {
+    "objects": [
+      {
+        "name": "SuccessOutput",
+        "fields": [
+          {
+            "name": "success",
+            "type": "Boolean!"
+          }
+        ]
+      }
+    ]
+  }
+}

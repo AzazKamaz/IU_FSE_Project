@@ -1,0 +1,29 @@
+version: '3.1'
+services:
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+    - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: postgres
+  api:
+    build: ./api/
+    depends_on:
+    - postgres
+    restart: always
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres
+  graphql-engine:
+    image: hasura/graphql-engine:v1.3.2
+    ports:
+    - 8080:8080
+    depends_on:
+    - postgres
+    - api
+    restart: always
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: anonymous
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
+      HASURA_GRAPHQL_DEV_MODE: "false"
