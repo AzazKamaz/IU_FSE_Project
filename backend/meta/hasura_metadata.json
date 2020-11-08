@@ -6,6 +6,20 @@
         "schema": "public",
         "name": "attendances"
       },
+      "object_relationships": [
+        {
+          "name": "class",
+          "using": {
+            "foreign_key_constraint_on": "class_id"
+          }
+        },
+        {
+          "name": "user",
+          "using": {
+            "foreign_key_constraint_on": "user_id"
+          }
+        }
+      ],
       "select_permissions": [
         {
           "role": "anonymous",
@@ -27,6 +41,28 @@
         "schema": "public",
         "name": "classes"
       },
+      "object_relationships": [
+        {
+          "name": "user",
+          "using": {
+            "foreign_key_constraint_on": "teacher_id"
+          }
+        }
+      ],
+      "array_relationships": [
+        {
+          "name": "attendances",
+          "using": {
+            "foreign_key_constraint_on": {
+              "column": "class_id",
+              "table": {
+                "schema": "public",
+                "name": "attendances"
+              }
+            }
+          }
+        }
+      ],
       "select_permissions": [
         {
           "role": "anonymous",
@@ -48,6 +84,32 @@
         "schema": "public",
         "name": "users"
       },
+      "array_relationships": [
+        {
+          "name": "attendances",
+          "using": {
+            "foreign_key_constraint_on": {
+              "column": "user_id",
+              "table": {
+                "schema": "public",
+                "name": "attendances"
+              }
+            }
+          }
+        },
+        {
+          "name": "classes",
+          "using": {
+            "foreign_key_constraint_on": {
+              "column": "teacher_id",
+              "table": {
+                "schema": "public",
+                "name": "classes"
+              }
+            }
+          }
+        }
+      ],
       "select_permissions": [
         {
           "role": "anonymous",
@@ -55,9 +117,7 @@
             "columns": [
               "id",
               "name",
-              "email",
-              "token",
-              "expires_at"
+              "email"
             ],
             "filter": {}
           }
