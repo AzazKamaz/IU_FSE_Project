@@ -53,8 +53,8 @@ class OauthModel extends ChangeNotifier {
             'f55fe8fe-74c4-45d6-bccc-e29aba32b102',
             'university.innopolis.attendance://innopolis.university/',
             serviceConfiguration: AuthorizationServiceConfiguration(
-              'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize',
-              'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
+              'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/authorize',
+              'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/token',
             ),
             refreshToken: refreshToken,
           ),
@@ -80,8 +80,8 @@ class OauthModel extends ChangeNotifier {
             'f55fe8fe-74c4-45d6-bccc-e29aba32b102',
             'university.innopolis.attendance://innopolis.university/',
             serviceConfiguration: AuthorizationServiceConfiguration(
-              'https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize',
-              'https://login.microsoftonline.com/organizations/oauth2/v2.0/token',
+              'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/authorize',
+              'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/token',
             ),
             scopes: ['email', 'openid', 'profile', 'User.Read', 'offline_access'],
             promptValues: ['login'],
