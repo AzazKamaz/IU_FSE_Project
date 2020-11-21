@@ -55,9 +55,7 @@
             "columns": [
               "id",
               "name",
-              "email",
-              "token",
-              "expires_at"
+              "email"
             ],
             "filter": {}
           }
