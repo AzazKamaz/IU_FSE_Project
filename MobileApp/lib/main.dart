@@ -1,11 +1,6 @@
-import 'dart:io';
 import 'package:automated_attendance_app/login.dart';
 import 'package:automated_attendance_app/oauth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_ble_lib/flutter_ble_lib.dart';
-import 'package:flutter_ble_peripheral/data.dart';
-import 'package:flutter_ble_peripheral/main.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
 import 'login.dart';
@@ -28,7 +23,7 @@ class _AttendanceApp extends State<AttendanceApp> {
 
   @override
   Widget build(BuildContext context) {
-    var authorized = Provider.of<OauthModel>(context).token?.accessToken != null;
+    var authorized = Provider.of<OauthModel>(context).user != null;
 
     return MaterialApp(
       title: 'Attendance App',
@@ -38,16 +33,15 @@ class _AttendanceApp extends State<AttendanceApp> {
       ),
       home: Navigator(
         pages: [
-          if (!authorized)
-            MaterialPage(
-              key: ValueKey('login'),
-              child: LoginPage(),
-            )
-          else
+          MaterialPage(
+            key: ValueKey('login'),
+            child: LoginPage(),
+          ),
+          if (authorized)
             MaterialPage(
               key: ValueKey('attendance'),
               child: AttendancePage(),
-            )
+            ),
         ],
         onPopPage: (route, result) => route.didPop(result),
       ),

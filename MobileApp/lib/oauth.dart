@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:automated_attendance_app/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hasura_connect/hasura_connect.dart';
@@ -7,8 +9,17 @@ import 'package:flutter_appauth/flutter_appauth.dart';
 import 'hasura.dart';
 
 class OauthModel extends ChangeNotifier {
+  Timer _refreshTimer;
+
   OauthModel() : super() {
-    load();
+    refresh();
+    _refreshTimer = new Timer(const Duration(minutes: 30), this.refresh);
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer.cancel();
+    super.dispose();
   }
 
   final FlutterAppAuth _appAuth = FlutterAppAuth();
@@ -18,17 +29,7 @@ class OauthModel extends ChangeNotifier {
 
   TokenResponse get token => _token;
 
-  Map<String, dynamic> get user {
-    if (_token?.accessToken == null) return null;
-
-    final parts = _token.accessToken.split(r'.');
-
-    if (parts.length != 3) return null;
-
-    return jsonDecode(
-      utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
-    );
-  }
+  Map<String, dynamic> get user => jwtDecode(_token?.accessToken);
 
   Future<Map<String, dynamic>> get userDetails async {
     if (_token?.accessToken == null) return null;
@@ -45,11 +46,13 @@ class OauthModel extends ChangeNotifier {
     }
   }
 
-  Future<void> load() async {
+  Future<void> refresh() async {
+    print("Refreshing token...");
+
     final refreshToken = await _secureStorage.read(key: 'refresh_token');
     if (refreshToken == null) return;
 
-    final TokenResponse token = await _appAuth
+    return await _appAuth
         .token(
           TokenRequest(
             'f55fe8fe-74c4-45d6-bccc-e29aba32b102',
@@ -61,32 +64,14 @@ class OauthModel extends ChangeNotifier {
             refreshToken: refreshToken,
           ),
         )
-        .catchError((error) => null);
-
-
-    if (token == null) {
-      _token = null;
-      await _secureStorage.delete(key: 'refresh_token');
-    } else {
-      hasura = HasuraConnect(hasuraUrl, headers: {
-        'Authorization': token.idToken,
-      });
-      await hasura.mutation("""
-        mutation {
-          ensureUser{
-            success
-          }
-        }
-      """);
-      _token = token;
-      await _secureStorage.write(
-          key: 'refresh_token', value: token.refreshToken);
-    }
-    notifyListeners();
+        .catchError((error) => null)
+        .then(this.useToken);
   }
 
   Future<void> login() async {
-    final TokenResponse token = await _appAuth
+    print("Logging in...");
+
+    await _appAuth
         .authorizeAndExchangeCode(
           AuthorizationTokenRequest(
             'f55fe8fe-74c4-45d6-bccc-e29aba32b102',
@@ -95,31 +80,33 @@ class OauthModel extends ChangeNotifier {
               'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/authorize',
               'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/token',
             ),
-            scopes: ['email', 'openid', 'profile', 'User.Read', 'offline_access'],
+            scopes: [
+              'email',
+              'openid',
+              'profile',
+              'User.Read',
+              'offline_access'
+            ],
             promptValues: ['login'],
           ),
         )
-        .catchError((error) => null);
+        .catchError((error) => print(error))
+        .then(this.useToken);
+  }
 
-    if (token == null) {
-      _token = null;
-      await _secureStorage.delete(key: 'refresh_token');
-    } else {
-      hasura = HasuraConnect(hasuraUrl, headers: {
-        'Authorization': token.idToken,
-      });
-      await hasura.mutation("""
-        mutation {
-          ensureUser{
-            success
-          }
-        }
-      """);
+  Future<void> useToken(TokenResponse token) async {
+    try {
+      hasuraUseAuthorization(token?.idToken);
+      await hasura.mutation("mutation {ensureUser{success}}");
       _token = token;
+      await _secureStorage.write(key: 'username', value: user['email']);
+    } catch (e) {
+      _token = null;
+    } finally {
       await _secureStorage.write(
-          key: 'refresh_token', value: token.refreshToken);
+          key: 'refresh_token', value: token?.refreshToken);
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> logout() async {
