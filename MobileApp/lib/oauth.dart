@@ -25,6 +25,10 @@ class OauthModel extends ChangeNotifier {
   final FlutterAppAuth _appAuth = FlutterAppAuth();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
+  bool _busy = false;
+
+  bool get busy => _busy;
+
   TokenResponse _token;
 
   TokenResponse get token => _token;
@@ -47,51 +51,65 @@ class OauthModel extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
-    print("Refreshing token...");
+    try {
+      _busy = true;
+      notifyListeners();
 
-    final refreshToken = await _secureStorage.read(key: 'refresh_token');
-    if (refreshToken == null) return;
+      print("Refreshing token...");
 
-    return await _appAuth
-        .token(
-          TokenRequest(
-            'f55fe8fe-74c4-45d6-bccc-e29aba32b102',
-            'university.innopolis.attendance://innopolis.university/',
-            serviceConfiguration: AuthorizationServiceConfiguration(
-              'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/authorize',
-              'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/token',
+      final refreshToken = await _secureStorage.read(key: 'refresh_token');
+      if (refreshToken == null) return;
+
+      return await _appAuth
+          .token(
+            TokenRequest(
+              'f55fe8fe-74c4-45d6-bccc-e29aba32b102',
+              'university.innopolis.attendance://innopolis.university/',
+              serviceConfiguration: AuthorizationServiceConfiguration(
+                'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/authorize',
+                'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/token',
+              ),
+              refreshToken: refreshToken,
             ),
-            refreshToken: refreshToken,
-          ),
-        )
-        .catchError((error) => null)
-        .then(this.useToken);
+          )
+          .catchError((error) => null)
+          .then(this.useToken);
+    } finally {
+      _busy = false;
+    }
   }
 
   Future<void> login() async {
-    print("Logging in...");
+    try {
+      _busy = true;
+      notifyListeners();
 
-    await _appAuth
-        .authorizeAndExchangeCode(
-          AuthorizationTokenRequest(
-            'f55fe8fe-74c4-45d6-bccc-e29aba32b102',
-            'university.innopolis.attendance://innopolis.university/',
-            serviceConfiguration: AuthorizationServiceConfiguration(
-              'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/authorize',
-              'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/token',
+      print("Logging in...");
+
+      await _appAuth
+          .authorizeAndExchangeCode(
+            AuthorizationTokenRequest(
+              'f55fe8fe-74c4-45d6-bccc-e29aba32b102',
+              'university.innopolis.attendance://innopolis.university/',
+              serviceConfiguration: AuthorizationServiceConfiguration(
+                'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/authorize',
+                'https://login.microsoftonline.com/8b33a0fd-354e-48f9-b6fa-b85f0b6e3e55/oauth2/v2.0/token',
+              ),
+              scopes: [
+                'email',
+                'openid',
+                'profile',
+                'User.Read',
+                'offline_access'
+              ],
+              promptValues: ['login'],
             ),
-            scopes: [
-              'email',
-              'openid',
-              'profile',
-              'User.Read',
-              'offline_access'
-            ],
-            promptValues: ['login'],
-          ),
-        )
-        .catchError((error) => print(error))
-        .then(this.useToken);
+          )
+          .catchError((error) => print(error))
+          .then(this.useToken);
+    } finally {
+      _busy = false;
+    }
   }
 
   Future<void> useToken(TokenResponse token) async {

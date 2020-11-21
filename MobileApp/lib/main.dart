@@ -1,6 +1,7 @@
 import 'package:automated_attendance_app/login.dart';
 import 'package:automated_attendance_app/oauth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import 'login.dart';

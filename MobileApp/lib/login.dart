@@ -6,25 +6,47 @@ import 'oauth.dart';
 class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final welcomeText = Material(
-        child: Text(
+    bool busy = Provider.of<OauthModel>(context).busy;
+
+    final welcomeText = Text(
       "Welcome to Attendance App",
       textAlign: TextAlign.center,
       style: TextStyle(fontSize: 20)
           .copyWith(color: Colors.green, fontWeight: FontWeight.bold),
-    ));
-    final loginWithIUButton = Material(
+    );
+
+    final loginButtonContent = AnimatedCrossFade(
+      firstChild: Text(
+        "Login with Innopolis University",
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 20)
+            .copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+      ),
+      secondChild: Padding(
+        padding: const EdgeInsets.all(2.0),
+        child: SizedBox(
+          height: 36,
+          width: 36,
+          child: CircularProgressIndicator(
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+            strokeWidth: 4.0,
+          ),
+        ),
+      ),
+      crossFadeState:
+          busy ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+      duration: const Duration(milliseconds: 200),
+    );
+
+    final loginButton = Material(
       elevation: 5.0,
       borderRadius: BorderRadius.circular(30.0),
       color: Colors.green,
       child: MaterialButton(
         minWidth: MediaQuery.of(context).size.width,
         padding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-        onPressed: () => Provider.of<OauthModel>(context).login(),
-        child: Text("Login with Innopolis University",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 20)
-                .copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+        onPressed: busy ? null : () => Provider.of<OauthModel>(context).login(),
+        child: loginButtonContent,
       ),
     );
 
@@ -38,14 +60,10 @@ class LoginPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                SizedBox(
-                  height: 35.0,
-                ),
+                const SizedBox(height: 35.0),
                 welcomeText,
-                SizedBox(
-                  height: 25.0,
-                ),
-                loginWithIUButton
+                const SizedBox(height: 25.0),
+                loginButton
               ],
             ),
           ),
