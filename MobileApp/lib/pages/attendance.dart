@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_ble_lib/flutter_ble_lib.dart';
 import 'package:flutter_ble_peripheral/data.dart';
 import 'package:flutter_ble_peripheral/main.dart';
+import 'package:hasura/hasura.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -25,11 +26,24 @@ class _AttendancePage extends State<AttendancePage> {
   final BleManager bleManager = BleManager();
   final FlutterBlePeripheral blePeripheral = FlutterBlePeripheral();
   String accessToken;
-  Map<String, String> students = Map();
+  Map<String, DateTime> students = Map();
+  Snapshot<dynamic> classes;
 
   @override
   initState() {
     super.initState();
+
+    final me = Provider.of<OauthModel>(context, listen: false).userId;
+    print('teacher_classes');
+    classes = HasuraModel.get(context).subscription("""
+      subscription(\$me: uuid!) {
+        classes(where: {teacher_id: {_eq: \$me}}) {
+          id
+          starts_at
+          ends_at
+        }
+      }
+    """, variables: {'me': me});
 
     bleManager.createClient().then((_) async {
       await _checkPermissions();
@@ -40,7 +54,25 @@ class _AttendancePage extends State<AttendancePage> {
         if (accessToken != null &&
             peripheral.advertisementData?.serviceUuids?.length == 1) {
           final student = peripheral.advertisementData.serviceUuids[0];
+          if (students.containsKey(student) &&
+              DateTime.now().difference(students[student]) <
+                  Duration(minutes: 1)) return;
+
+          students.addAll({student: DateTime.now()});
+
           print('attend/$student');
+
+          final ongoingClasses = classes?.value['data']['classes'].where((c) =>
+              DateTime.now().isAfter(DateTime.parse(c['starts_at'])) &&
+              DateTime.now().isBefore(DateTime.parse(c['ends_at'])));
+
+          for(var i in ongoingClasses)
+            await HasuraModel.get(context).mutation(
+                "mutation(\$class: uuid!, \$user: uuid!) {attend(class_id: \$class, user_id: \$user){success}}",
+                variables: {
+                  'class': i['id'],
+                  'user': student,
+                }).catchError(print);
         }
       });
     });
@@ -63,6 +95,7 @@ class _AttendancePage extends State<AttendancePage> {
     final token = Provider.of<OauthModel>(context).token;
     this.accessToken = token.idToken;
     final userId = Provider.of<OauthModel>(context).userId;
+    classes?.changeVariable({"me": userId});
 
     if (await blePeripheral.isAdvertising()) await blePeripheral.stop();
 
