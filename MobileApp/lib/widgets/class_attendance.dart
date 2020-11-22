@@ -8,6 +8,8 @@ import 'package:flutter/rendering.dart';
 import 'package:hasura/hasura.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:share/share.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../providers/hasura.dart';
 import '../utils.dart';
@@ -41,6 +43,7 @@ class _ClassAttendance extends State<ClassAttendance> {
           attendances(order_by: {user: {name: asc}}) {
       			user {
               name
+              email
             }
             first_seen_at
             last_seen_at
@@ -85,12 +88,16 @@ class _ClassAttendance extends State<ClassAttendance> {
 
         var attendances =
             snapshot.data["data"]["class"]["attendances"] as List<dynamic>;
+
         return Material(
             child: CupertinoPageScaffold(
                 navigationBar: CupertinoNavigationBar(
                   leading: Container(),
                   middle: Text(snapshot.data["data"]["class"]["title"]),
-                  trailing: Icon(Icons.share),
+                  trailing: IconButton(
+                    icon: Icon(Icons.share),
+                    onPressed: () => exportAttendance(snapshot.data["data"]["class"]),
+                  ),
                 ),
                 child: SafeArea(
                     bottom: false,
