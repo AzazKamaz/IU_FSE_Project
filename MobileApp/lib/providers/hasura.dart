@@ -18,7 +18,6 @@ class HasuraModel extends ChangeNotifier {
   }
 
   void setToken(String token) {
-    // hasura.headers.addAll({'Authorization': 'Bearer $token'});
     hasura.addHeader('Authorization', 'Bearer $token');
   }
 

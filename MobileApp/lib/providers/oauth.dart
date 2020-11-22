@@ -120,10 +120,6 @@ class OauthModel extends ChangeNotifier {
       await _secureStorage.write(key: 'username', value: user['email']);
       final refreshDelay = Duration(seconds: (user['exp'] - user['iat']) ~/ 2);
       _refreshTimer = new Timer(refreshDelay, this.refresh);
-
-      print(token.accessToken.substring(0, 1000));
-      print(token.accessToken.substring(1000, 2000));
-      print(token.accessToken.substring(2000));
     } catch (e) {
       print(e);
       _token = null;

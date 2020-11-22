@@ -44,13 +44,6 @@ class _StudentAttendances extends State<StudentAttendances>
         }
       }
     """, variables: {'me': me});
-    //     .then((value) {
-    //   // value.changeVariables(
-    //   //     {'me': Provider.of<OauthModel>(context, listen: false).userId});
-    //   setState(() {
-    //     attendances = value;
-    //   });
-    // });
   }
 
   @override
@@ -64,8 +57,7 @@ class _StudentAttendances extends State<StudentAttendances>
     super.didChangeDependencies();
 
     final userId = Provider.of<OauthModel>(context).userId;
-    // if (attendances != null && attendances.query.variables["me"] != userId)
-    //   attendances?.changeVariables({"me": userId});
+    attendances?.changeVariable({"me": userId});
   }
 
   @override
