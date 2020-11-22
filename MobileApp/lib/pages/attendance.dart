@@ -158,8 +158,8 @@ class _AttendancePage extends State<AttendancePage> {
               bottom: TabBar(
                 indicatorColor: Colors.white,
                 tabs: [
-                  Tab(text: "My Attendances"),
-                  Tab(text: "My Classes"),
+                  Tab(text: "As a Student"),
+                  Tab(text: "As a Teacher"),
                 ],
               ),
             )
