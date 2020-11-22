@@ -34,7 +34,7 @@ class _AttendancePage extends State<AttendancePage> {
     super.initState();
 
     final me = Provider.of<OauthModel>(context, listen: false).userId;
-    print('teacher_classes');
+
     classes = HasuraModel.get(context).subscription("""
       subscription(\$me: uuid!) {
         classes(where: {teacher_id: {_eq: \$me}}) {
@@ -125,7 +125,6 @@ class _AttendancePage extends State<AttendancePage> {
   }
 
   Widget appBarBackground(BuildContext context) {
-    print(Provider.of<OauthModel>(context).user);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

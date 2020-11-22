@@ -34,7 +34,7 @@ class _TeacherClasses extends State<TeacherClasses>
     super.initState();
 
     final me = Provider.of<OauthModel>(context, listen: false).userId;
-    print('teacher_classes');
+
     attendances = HasuraModel.get(context).subscription("""
       subscription(\$me: uuid!) {
         classes(where: {teacher_id: {_eq: \$me}}, order_by: {starts_at: desc}) {
@@ -74,10 +74,11 @@ class _TeacherClasses extends State<TeacherClasses>
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.active)
           return Container();
-        print(snapshot);
+
         var attendances = snapshot.hasData
             ? snapshot.data["data"]["classes"] as List<dynamic>
             : [];
+
         return ListView(
           padding: EdgeInsets.all(16.0),
           children: ListTile.divideTiles(
