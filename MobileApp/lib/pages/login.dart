@@ -27,9 +27,11 @@ class LoginPage extends StatelessWidget {
         child: SizedBox(
           height: 36,
           width: 36,
-          child: CircularProgressIndicator(
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-            strokeWidth: 4.0,
+          child: Center(
+            child: CircularProgressIndicator(
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              strokeWidth: 4.0,
+            ),
           ),
         ),
       ),
