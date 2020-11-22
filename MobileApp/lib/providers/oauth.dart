@@ -1,24 +1,23 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:automated_attendance_app/utils.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:hasura_connect/hasura_connect.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'hasura.dart';
 
 class OauthModel extends ChangeNotifier {
   Timer _refreshTimer;
+  HasuraModel hasura;
 
-  OauthModel() : super() {
+  OauthModel(this.hasura) : super() {
     refresh();
-    _refreshTimer = new Timer(const Duration(minutes: 30), this.refresh);
   }
 
   @override
   void dispose() {
-    _refreshTimer.cancel();
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
@@ -34,6 +33,7 @@ class OauthModel extends ChangeNotifier {
   TokenResponse get token => _token;
 
   Map<String, dynamic> get user => jwtDecode(_token?.accessToken);
+  String get userId => user != null ? user["oid"] : null;
 
   Future<Map<String, dynamic>> get userDetails async {
     if (_token?.accessToken == null) return null;
@@ -114,11 +114,18 @@ class OauthModel extends ChangeNotifier {
 
   Future<void> useToken(TokenResponse token) async {
     try {
-      hasuraUseAuthorization(token?.idToken);
-      await hasura.mutation("mutation {ensureUser{success}}");
+      hasura.setToken(token?.idToken);
+      await hasura.hasura.mutation("mutation {ensureUser{success}}");
       _token = token;
       await _secureStorage.write(key: 'username', value: user['email']);
+      final refreshDelay = Duration(seconds: (user['exp'] - user['iat']) ~/ 2);
+      _refreshTimer = new Timer(refreshDelay, this.refresh);
+
+      print(token.accessToken.substring(0, 1000));
+      print(token.accessToken.substring(1000, 2000));
+      print(token.accessToken.substring(2000));
     } catch (e) {
+      print(e);
       _token = null;
     } finally {
       await _secureStorage.write(

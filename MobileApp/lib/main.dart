@@ -1,15 +1,20 @@
-import 'package:automated_attendance_app/login.dart';
-import 'package:automated_attendance_app/oauth.dart';
+import 'package:automated_attendance_app/providers/hasura.dart';
+import 'package:automated_attendance_app/providers/oauth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
-import 'login.dart';
-import 'attendance.dart';
+import 'pages/login.dart';
+import 'pages/attendance.dart';
 
 void main() {
-  runApp(ChangeNotifierProvider(
-    create: (context) => OauthModel(),
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (context) => HasuraModel()),
+      ChangeNotifierProxyProvider<HasuraModel, OauthModel>(
+        update: (context, hasura, oauth) => OauthModel(hasura),
+        create: (BuildContext context) => null,
+      ),
+    ],
     child: AttendanceApp(),
   ));
 }
