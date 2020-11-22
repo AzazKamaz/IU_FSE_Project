@@ -32,7 +32,7 @@ class OauthModel extends ChangeNotifier {
 
   TokenResponse get token => _token;
 
-  Map<String, dynamic> get user => jwtDecode(_token?.accessToken);
+  Map<String, dynamic> get user => jwtDecode(_token?.idToken);
   String get userId => user != null ? user["oid"] : null;
 
   Future<Map<String, dynamic>> get userDetails async {

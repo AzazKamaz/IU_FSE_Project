@@ -91,6 +91,21 @@ class _AttendancePage extends State<AttendancePage> {
     }
   }
 
+  Widget appBarBackground(BuildContext context) {
+    print(Provider.of<OauthModel>(context).user);
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        CircleAvatar(
+          backgroundImage:
+              NetworkImage("https://thispersondoesnotexist.com/image"),
+          radius: 90,
+        ),
+        SizedBox(height: 40),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -102,21 +117,17 @@ class _AttendancePage extends State<AttendancePage> {
             SliverAppBar(
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
-                title: Text(Provider.of<OauthModel>(context).user["name"]),
-                centerTitle: true,
-                titlePadding: EdgeInsets.only(bottom: 62),
-                background: Image(
-                  fit: BoxFit.cover,
-                  image:
-                      NetworkImage("https://thispersondoesnotexist.com/image"),
-                ),
-              ),
+                  title: Text(Provider.of<OauthModel>(context).user["name"]),
+                  centerTitle: true,
+                  titlePadding: EdgeInsets.only(bottom: 62),
+                  collapseMode: CollapseMode.pin,
+                  background: appBarBackground(context)),
               expandedHeight: 300,
               bottom: TabBar(
                 indicatorColor: Colors.white,
                 tabs: [
                   Tab(text: "My Attendances"),
-                  Tab(text: "My Attendees"),
+                  Tab(text: "My Classes"),
                 ],
               ),
             )
