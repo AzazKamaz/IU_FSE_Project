@@ -33,7 +33,9 @@ class _TeacherClasses extends State<TeacherClasses>
   initState() {
     super.initState();
 
-    final me = Provider.of<OauthModel>(context, listen: false).userId;
+    final me = Provider
+        .of<OauthModel>(context, listen: false)
+        .userId;
 
     attendances = HasuraModel.get(context).subscription("""
       subscription(\$me: uuid!) {
@@ -41,6 +43,7 @@ class _TeacherClasses extends State<TeacherClasses>
           id
           title
           starts_at
+          ends_at
           attendances_aggregate {
             aggregate {
               count
@@ -61,7 +64,9 @@ class _TeacherClasses extends State<TeacherClasses>
   Future<void> didChangeDependencies() async {
     super.didChangeDependencies();
 
-    final userId = Provider.of<OauthModel>(context).userId;
+    final userId = Provider
+        .of<OauthModel>(context)
+        .userId;
     attendances?.changeVariable({"me": userId});
   }
 
@@ -93,20 +98,33 @@ class _TeacherClasses extends State<TeacherClasses>
   Widget listEntry(attendance) {
     DateTime classStarts = DateTime.parse(attendance["starts_at"]);
     int count =
-        attendance["attendances_aggregate"]["aggregate"]["count"];
+    attendance["attendances_aggregate"]["aggregate"]["count"];
+
+    bool isOngoing =
+        DateTime.now().isAfter(DateTime.parse(attendance['starts_at'])) &&
+            DateTime.now().isBefore(DateTime.parse(attendance['ends_at']));
 
     return ListTile(
       title: Text(
         attendance["title"],
-        style: Theme.of(context).textTheme.headline6,
+        style: Theme
+            .of(context)
+            .textTheme
+            .headline6,
       ),
       subtitle: Text(
-        formatDateTime(classStarts),
-        style: Theme.of(context).textTheme.subtitle1,
+        formatDateTime(classStarts) + (isOngoing ? ', ongoing' : ''),
+        style: Theme
+            .of(context)
+            .textTheme
+            .subtitle1,
       ),
       trailing: Text(
         count.toString(),
-        style: Theme.of(context).textTheme.headline4,
+        style: Theme
+            .of(context)
+            .textTheme
+            .headline4,
       ),
       onTap: () => showClassAttendance(context, attendance['id']),
     );
