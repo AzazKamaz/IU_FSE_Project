@@ -55,10 +55,16 @@ class OauthModel extends ChangeNotifier {
       _busy = true;
       notifyListeners();
 
-      print("Refreshing token...");
+      print("Loading refresh token...");
 
       final refreshToken = await _secureStorage.read(key: 'refresh_token');
-      if (refreshToken == null) return;
+      if (refreshToken == null) {
+        _busy = false;
+        notifyListeners();
+        return;
+      }
+
+      print("Refreshing token...");
 
       return await _appAuth
           .token(
@@ -76,6 +82,7 @@ class OauthModel extends ChangeNotifier {
           .then(this.useToken);
     } finally {
       _busy = false;
+      notifyListeners();
     }
   }
 
@@ -109,6 +116,7 @@ class OauthModel extends ChangeNotifier {
           .then(this.useToken);
     } finally {
       _busy = false;
+      notifyListeners();
     }
   }
 
